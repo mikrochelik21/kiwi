@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Animations for Landing Page */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-20px) translateX(10px);
+  }
+  66% {
+    transform: translateY(10px) translateX(-10px);
+  }
+}
+
+@keyframes floatDelayed {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(15px) translateX(-15px);
+  }
+  66% {
+    transform: translateY(-15px) translateX(15px);
+  }
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 1.5s ease-out forwards;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 4s ease infinite;
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: floatDelayed 10s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 8s linear infinite;
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.2);
+  }
+  20% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.2);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5));
+}
+
+/* Print styles for PDF export */
+.print-only { display: none; }
+
+@media print {
+  @page { margin: 1.5cm; }
+
+  header, nav, .no-print, button, .sticky, .print-hidden {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+  .print-root {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  .max-w-7xl {
+    max-width: 100% !important;
+  }
+
+  * {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  pre {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 10pt !important;
+    white-space: pre-wrap !important;
+    word-break: break-word;
+  }
+
+  .print-section {
+    background: #fff !important;
+    border: 1px solid #d9e3f0 !important;
+    border-radius: 16px !important;
+    padding: 18px !important;
+    margin-bottom: 18px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-grid-two {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #0f172a !important;
+    break-after: avoid;
+  }
+  p, li, span {
+    color: #1f2937 !important;
+  }
+
+  .page-break {
+    page-break-after: always;
+  }
+}
