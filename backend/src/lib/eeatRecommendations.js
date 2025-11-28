@@ -67,10 +67,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (webUniquenessMetric && webUniquenessMetric.score < 60) {
     pushRec(
       'eeat-original-insights',
-      `Add your personal experience, test results, or unique angle that other blogs don't have`,
+      `Share your personal experience and what makes your approach different`,
       9,
       'Medium',
-      `Share: What did you try? What worked/didn't work? What surprised you? Add photos of YOUR results.`
+      `Talk about what you actually tried, what worked for you, and what surprised you along the way.`
     );
   }
   
@@ -78,20 +78,20 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (databaseUniquenessMetric && databaseUniquenessMetric.score < 60) {
     pushRec(
       'eeat-industry-uniqueness',
-      `Your vocabulary is too common in the food blogging industry—use more distinctive terms`,
+      `Use more specific terms to stand out from other blogs in your niche`,
       7,
       'Medium',
-      `Replace generic food terms with specific varieties, techniques, or regional names. Example: "pasta" → "bucatini all'amatriciana"`
+      `Instead of generic words, get specific with varieties, techniques, or regional names that show your expertise.`
     );
   }
   
   if (duplicateRatio > 30) {
     pushRec(
       'eeat-avoid-copying',
-      'Rewrite sections that sound too similar to other blogs—make it yours',
+      'Some parts sound too similar to other content—add your unique perspective',
       duplicateRatio > 50 ? 9 : 7,
       'Medium',
-      `Don't just rephrase other blogs. Share what YOU learned, YOUR process, YOUR tips.`
+      `Share what you learned through your own experience, your personal process, and tips that worked for you.`
     );
   }
 
@@ -108,36 +108,16 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (wordCount < 600) {
     pushRec(
       'eeat-substantial-value',
-      'Add more depth—explain the "why" behind your tips, include troubleshooting, or add FAQs',
+      'Add more helpful details to make this more valuable for readers',
       8,
       'Medium',
-      'Go beyond the basics. What do beginners always ask? What mistakes did YOU make?'
+      'Explain the why behind your advice, answer common questions, or share mistakes you made so others can avoid them.'
     );
   }
 
   // ============================================
   // EEAT: EXPERTISE & AUTHORITY
   // ============================================
-
-  if (!aboutPresent) {
-    pushRec(
-      'eeat-about-page',
-      'Add an About page that shows your background, expertise, or why readers should trust you',
-      8,
-      'Low',
-      `Who are you? Why do you blog about this? What's your experience? Be real and relatable.`
-    );
-  }
-
-  if (!structuredDataPresent) {
-    pushRec(
-      'eeat-author-info',
-      'Add your name and publish date to show expertise and freshness',
-      7,
-      'Medium',
-      'Include author bio at top/bottom. Show publish/update dates clearly.'
-    );
-  }
 
   if (freshContent === false) {
     pushRec(
@@ -154,10 +134,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (subheadingsCount < neededSubs && wordCount > 800) {
     pushRec(
       'eeat-descriptive-headings',
-      `Break content into clear sections with descriptive headings that preview what's coming`,
+      `Use clear headings to organize your content and help readers scan`,
       7,
       'Low',
-      'Example: "Why This Recipe Works" or "Common Mistakes to Avoid" instead of just "Tips"'
+      'Make headings descriptive and helpful, like "Why This Works" or "What to Avoid" instead of generic ones.'
     );
   }
 
@@ -175,10 +155,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
     const anchorIdeas = (topKeywords || []).slice(0, 2).map(k => k.word).join(', ');
     pushRec(
       'eeat-related-content',
-      `Link to 2-4 of your related posts to show depth of expertise (found ${internalLinksTotal})`,
+      `Link to your other related posts to help readers explore more`,
       6,
       'Low',
-      `Example: Link to your other posts about ${anchorIdeas || 'related topics'}`
+      `Connect readers to 2-4 of your other articles on ${anchorIdeas || 'similar topics'} for deeper value.`
     );
   }
 
@@ -233,10 +213,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (fleschScore < 50) {
     pushRec(
       'eeat-readability',
-      'Make it easier to read: shorter sentences, simple words, bullet points for key steps',
+      'Simplify your writing to make it easier to follow',
       6,
       'Low',
-      `Write like you're explaining to a friend. Break long paragraphs. Use lists.`
+      `Use shorter sentences, break up long paragraphs, and add bullet points for important steps. Write conversationally.`
     );
   }
 
@@ -257,10 +237,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (lcpValue && lcpValue > 2.5) {
     pushRec(
       'perf-page-speed',
-      'Page loads slowly—compress the main image or use a smaller hero image',
+      'Your page could load faster—try compressing your images',
       lcpValue > 4 ? 8 : 6,
       'Medium',
-      'Use tools like TinyPNG to compress images before uploading. Aim for under 200KB.'
+      'Compress images before uploading using free tools. Smaller files mean faster loading for your readers.'
     );
   }
 
@@ -301,10 +281,10 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   if (!metaDescription || metaDescription.length < 50) {
     pushRec(
       'seo-meta-description',
-      'Write a compelling 120-160 character description with a hook for search results',
+      'Add a description that makes people want to click in search results',
       !metaDescription ? 7 : 5,
       'Low',
-      'Example: "Learn to make fluffy pancakes in 15 minutes with my secret ingredient trick!"'
+      'Write 120-160 characters that preview what readers will learn and why it matters to them.'
     );
   } else if (metaDescription.length > 160) {
     pushRec(
