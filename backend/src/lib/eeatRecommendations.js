@@ -14,7 +14,8 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   // Extract metrics
   const {
     // Content metrics
-    uniquenessMetric,
+    webUniquenessMetric,
+    databaseUniquenessMetric,
     duplicateRatio,
     photoOriginality,
     imagesCount,
@@ -62,13 +63,25 @@ export function generateEEATRecommendations(metrics, topKeywords = []) {
   // EEAT: EXPERIENCE & ORIGINALITY (Top Priority)
   // ============================================
   
-  if (uniquenessMetric && uniquenessMetric.score < 60) {
+  // Use web uniqueness metric for general content originality
+  if (webUniquenessMetric && webUniquenessMetric.score < 60) {
     pushRec(
       'eeat-original-insights',
       `Add your personal experience, test results, or unique angle that other blogs don't have`,
       9,
       'Medium',
       `Share: What did you try? What worked/didn't work? What surprised you? Add photos of YOUR results.`
+    );
+  }
+  
+  // Use database uniqueness for industry-specific vocabulary
+  if (databaseUniquenessMetric && databaseUniquenessMetric.score < 60) {
+    pushRec(
+      'eeat-industry-uniqueness',
+      `Your vocabulary is too common in the food blogging industry—use more distinctive terms`,
+      7,
+      'Medium',
+      `Replace generic food terms with specific varieties, techniques, or regional names. Example: "pasta" → "bucatini all'amatriciana"`
     );
   }
   
