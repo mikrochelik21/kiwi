@@ -251,7 +251,7 @@ const AnalyzePage = () => {
           <div className="mt-16 grid md:grid-cols-3 gap-4">
             {[
               { title: "200+ Metrics", desc: "Comprehensive analysis" },
-              { title: "Instant Results", desc: "Under 30 seconds" },
+              { title: "Instant Results", desc: "Under 60 seconds" },
               { title: "Actionable Tips", desc: "Prioritized recommendations" }
             ].map((item, i) => (
               <div key={i} className="group p-6 bg-white/70 backdrop-blur-xl rounded-2xl border border-green-200/40 text-center shadow-sm hover:shadow-lg hover:shadow-green-100/50 hover:scale-105 transition-all duration-300 hover:bg-white/90 relative overflow-hidden">
