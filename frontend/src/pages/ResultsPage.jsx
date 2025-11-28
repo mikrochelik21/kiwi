@@ -617,7 +617,7 @@ const ResultsPage = () => {
         </div>
 
         {/* Overview Tab - Quick Summary */}
-        <div className={`${activeTab === 'overview' ? 'block' : 'hidden'} print:block space-y-6`}>
+        <div className={`${activeTab === 'overview' ? 'block' : 'hidden'} print:hidden space-y-6`}>
             <h2 className="text-2xl font-bold text-slate-900 mb-6">
               Performance Summary
             </h2>
@@ -700,7 +700,7 @@ const ResultsPage = () => {
           </div>
 
         {/* Recommendations Tab */}
-        <div className={`${activeTab === 'recommendations' ? 'block' : 'hidden'} print:block space-y-4`}>
+        <div className={`${activeTab === 'recommendations' ? 'block' : 'hidden'} print:hidden space-y-4`}>
             <h2 className="text-2xl font-bold text-slate-900 mb-6">
               Actionable Recommendations
             </h2>
@@ -773,7 +773,7 @@ const ResultsPage = () => {
         </div>
 
         {/* Detailed Metrics - New Interactive Component */}
-        <div className={`${activeTab === 'module-details' ? 'block' : 'hidden'} print:block`}>
+        <div className={`${activeTab === 'module-details' ? 'block' : 'hidden'} print:hidden`}>
           <ModuleDetails results={results} />
         </div>
         </>
