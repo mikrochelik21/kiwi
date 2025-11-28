@@ -127,27 +127,6 @@ Frontend (React) → Express API → Analysis Engine → MongoDB (caches only)
 - 🧮 **Mathematically Sound** - All formulas verified, weights sum to 100%, proper normalization
 - 🚀 **Production Ready** - Environment configs, error handling, CORS setup
 
----
-
-## 🧪 .env Setup
-
-### Backend (`/backend`)
-
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/
-NODE_ENV=development
-
-UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
-
-# Optional: LLM integration for enhanced recommendations
-OLLAMA_URL=http://localhost:11434
-OLLAMA_API_KEY=your_api_key
-OLLAMA_MODEL=mistral
-
-# Real metrics via Google PageSpeed Insights (25k free/day)
-GOOGLE_PAGESPEED_API_KEY=your_pagespeed_key
-```
 
 ### Frontend (`/frontend`)
 
