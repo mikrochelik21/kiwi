@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { Sparkles, TrendingUp, Eye, Zap, CheckCircle, ArrowRight, BarChart3, Lightbulb, Target, Heart, Globe } from "lucide-react";
+import { Sparkles, TrendingUp, Eye, Zap, CheckCircle, ArrowRight, BarChart3, Lightbulb, Target, Heart, Globe, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 import FloatingAnalyzeButton from "../components/FloatingAnalyzeButton";
 
 const CreatorLandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [activeFeature, setActiveFeature] = useState(0);
+  const [showVideoModal, setShowVideoModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -130,7 +131,10 @@ const CreatorLandingPage = () => {
                   </div>
                 </Link>
                 
-                <button className="group px-8 py-4 bg-white text-green-700 rounded-2xl font-semibold text-lg border-2 border-green-300 hover:border-green-500 hover:bg-green-50 transition-all duration-300 hover:scale-105 shadow-md">
+                <button 
+                  onClick={() => setShowVideoModal(true)}
+                  className="group px-8 py-4 bg-white text-green-700 rounded-2xl font-semibold text-lg border-2 border-green-300 hover:border-green-500 hover:bg-green-50 transition-all duration-300 hover:scale-105 shadow-md"
+                >
                   <span className="flex items-center justify-center gap-2">
                     <Eye className="w-5 h-5" />
                     See Example
@@ -478,6 +482,50 @@ const CreatorLandingPage = () => {
       
       {/* Floating Analyze Button */}
       <FloatingAnalyzeButton />
+
+      {/* Video Demo Modal */}
+      {showVideoModal && (
+        <div 
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowVideoModal(false)}
+        >
+          <div 
+            className="relative bg-white rounded-2xl max-w-5xl w-full overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowVideoModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all duration-200 hover:scale-110"
+            >
+              <X className="w-6 h-6 text-slate-700" />
+            </button>
+
+            {/* Video Container */}
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <video
+                className="absolute inset-0 w-full h-full"
+                controls
+                autoPlay
+                src="/Kiwi_demo.mp4"
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+
+            {/* Video Info */}
+            <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50">
+              <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
+                <span className="text-2xl">🥝</span>
+                Kiwi Demo - Blog Analysis in Action
+              </h3>
+              <p className="text-slate-600">
+                Watch how Kiwi analyzes a blog in real-time, providing comprehensive insights across 8 key modules.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
