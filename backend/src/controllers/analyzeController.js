@@ -237,12 +237,11 @@ function extractTopKeywords(text, topN = 10) {
 }
 
 /**
- * Calculate comprehensive uniqueness metric based on word rarity
- * Compares website's vocabulary against web-wide frequency data
+ * Calculate uniqueness based on WEB FREQUENCY DATA (Datamuse API)
  * @param {string} text - Content text
  * @returns {Promise<Object>} - Uniqueness analysis with score 0-100
  */
-async function calculateUniquenessMetric(text) {
+async function calculateWebUniquenessMetric(text) {
   if (!text || text.length === 0) {
     return {
       score: 0,
@@ -269,7 +268,7 @@ async function calculateUniquenessMetric(text) {
     const sortedByLocalFreq = [...allKeywords].sort((a, b) => a.count - b.count);
     const leastCommonOnPage = sortedByLocalFreq.slice(0, 5);
     
-    logger.log(`[Uniqueness] Analyzing ${leastCommonOnPage.length} least common words from page:`, leastCommonOnPage.map(w => w.word));
+    logger.log(`[Web Uniqueness] Analyzing ${leastCommonOnPage.length} least common words from page:`, leastCommonOnPage.map(w => w.word));
     
     // Get web frequency for these rare-on-page words
     const webFrequencies = await Promise.all(
@@ -324,41 +323,23 @@ async function calculateUniquenessMetric(text) {
     const rareRatio = veryRareWords.length / validWords.length;
     score += Math.round(rareRatio * 15);
     
-    // Check database to see how unique these words are within food industry (analyzed sites)
-    const foodIndustryUniqueness = await Promise.all(
-      validWords.map(async ({ word }) => {
-        const dbWord = await WordFrequency.findOne({ word });
-        return {
-          word,
-          urlCount: dbWord ? dbWord.urlCount : 0  // How many food blogs use this word
-        };
-      })
-    );
-    
-    // Bonus: words rarely used in food industry (urlCount <= 3)
-    const industryUniqueWords = foodIndustryUniqueness.filter(w => w.urlCount <= 3);
-    const industryBonus = Math.min(20, industryUniqueWords.length * 5);  // Up to +20 points
-    score += industryBonus;
-    
-    logger.log(`[Uniqueness] Food industry analysis: ${industryUniqueWords.length}/${validWords.length} words rarely used in food blogs (urlCount<=3)`);
-    
-    // Determine level based on web frequency + food industry usage
+    // Determine level based on WEB frequency only
     let level, reasoning;
     if (score >= 85) {
       level = 'highly-unique';
-      reasoning = `Exceptional vocabulary uniqueness! ${industryUniqueWords.length} ${industryUniqueWords.length === 1 ? 'word' : 'words'} rarely used in food industry.`;
+      reasoning = `Exceptional web vocabulary uniqueness! Uses ${veryRareWords.length} very rare ${veryRareWords.length === 1 ? 'word' : 'words'} (web freq < 0.5).`;
     } else if (score >= 70) {
       level = 'unique';
-      reasoning = `Strong vocabulary uniqueness with ${veryRareWords.length + rareWords.length} rare/uncommon ${veryRareWords.length + rareWords.length === 1 ? 'word' : 'words'}.`;
+      reasoning = `Strong web vocabulary uniqueness with ${veryRareWords.length + rareWords.length} rare/uncommon ${veryRareWords.length + rareWords.length === 1 ? 'word' : 'words'}.`;
     } else if (score >= 55) {
       level = 'moderately-unique';
-      reasoning = `Moderate uniqueness - mix of common and uncommon vocabulary.`;
+      reasoning = `Moderate web uniqueness - mix of common and uncommon vocabulary.`;
     } else if (score >= 40) {
       level = 'somewhat-generic';
-      reasoning = `Fairly generic vocabulary - mostly common words.`;
+      reasoning = `Fairly generic vocabulary on the web - mostly common words.`;
     } else {
       level = 'generic';
-      reasoning = `Generic content using very common vocabulary.`;
+      reasoning = `Generic content using very common web vocabulary.`;
     }
     
     return {
@@ -371,17 +352,159 @@ async function calculateUniquenessMetric(text) {
         veryRareCount: veryRareWords.length,
         rareCount: rareWords.length,
         uncommonCount: uncommonWords.length,
-        veryRareWords: veryRareWords.slice(0, 5).map(w => w.word), // Top 5 for display
+        veryRareWords: veryRareWords.slice(0, 5).map(w => w.word),
         rareWords: rareWords.slice(0, 5).map(w => w.word)
       }
     };
     
   } catch (error) {
-    console.error('[Uniqueness Metric] Error:', error.message);
+    console.error('[Web Uniqueness Metric] Error:', error.message);
     return {
       score: 50,
       level: 'unknown',
-      reasoning: 'Error calculating uniqueness',
+      reasoning: 'Error calculating web uniqueness',
+      details: {}
+    };
+  }
+}
+
+/**
+ * Calculate uniqueness based on LOCAL DATABASE (MongoDB)
+ * @param {string} text - Content text
+ * @returns {Promise<Object>} - Uniqueness analysis with score 0-100
+ */
+async function calculateDatabaseUniquenessMetric(text) {
+  if (!text || text.length === 0) {
+    return {
+      score: 0,
+      level: 'unknown',
+      reasoning: 'No content to analyze',
+      details: {}
+    };
+  }
+
+  try {
+    // Extract ALL keywords, then get the 5 LEAST common on this page
+    const allKeywords = extractTopKeywords(text, 50);
+    
+    if (allKeywords.length === 0) {
+      return {
+        score: 0,
+        level: 'generic',
+        reasoning: 'No meaningful keywords found',
+        details: {}
+      };
+    }
+
+    // Sort by LOCAL frequency (ascending) and take the 5 LEAST common
+    const sortedByLocalFreq = [...allKeywords].sort((a, b) => a.count - b.count);
+    const leastCommonOnPage = sortedByLocalFreq.slice(0, 5);
+    
+    logger.log(`[Database Uniqueness] Analyzing ${leastCommonOnPage.length} least common words from page:`, leastCommonOnPage.map(w => w.word));
+    
+    // Check database to see how unique these words are within food industry (analyzed sites)
+    const foodIndustryUniqueness = await Promise.all(
+      leastCommonOnPage.map(async ({ word }) => {
+        const dbWord = await WordFrequency.findOne({ word });
+        return {
+          word,
+          urlCount: dbWord ? dbWord.urlCount : 0,  // How many food blogs use this word
+          totalCount: dbWord ? dbWord.totalCount : 0
+        };
+      })
+    );
+    
+    const validWords = foodIndustryUniqueness.filter(w => w.urlCount !== undefined);
+    
+    if (validWords.length === 0) {
+      return {
+        score: 100, // If no words in database yet, they're all unique!
+        level: 'highly-unique',
+        reasoning: 'All words are new to the database - completely unique in food industry!',
+        details: {
+          totalAnalyzed: leastCommonOnPage.length,
+          newWords: leastCommonOnPage.map(w => w.word)
+        }
+      };
+    }
+    
+    // Categorize words by database frequency
+    const veryRareWords = validWords.filter(w => w.urlCount <= 2);   // Used by ≤2 blogs
+    const rareWords = validWords.filter(w => w.urlCount > 2 && w.urlCount <= 5);  // 3-5 blogs
+    const uncommonWords = validWords.filter(w => w.urlCount > 5 && w.urlCount <= 15); // 6-15 blogs
+    const commonWords = validWords.filter(w => w.urlCount > 15); // >15 blogs
+    
+    // Calculate score based on database rarity
+    let score = 50; // Base score
+    
+    // Average urlCount across analyzed words
+    const avgUrlCount = validWords.reduce((sum, w) => sum + w.urlCount, 0) / validWords.length;
+    
+    // Adjust based on average database frequency (lower urlCount = more unique)
+    if (avgUrlCount <= 2) {
+      score += 35; // Very rare in database
+    } else if (avgUrlCount <= 5) {
+      score += 25; // Rare in database
+    } else if (avgUrlCount <= 15) {
+      score += 15; // Uncommon in database
+    } else if (avgUrlCount <= 30) {
+      score += 5; // Somewhat common
+    } else {
+      score -= 20; // Very common in database
+    }
+    
+    // Bonus for having multiple very rare words
+    const rareRatio = veryRareWords.length / validWords.length;
+    score += Math.round(rareRatio * 15);
+    
+    logger.log(`[Database Uniqueness] Food industry analysis: ${veryRareWords.length}/${validWords.length} words very rare in database (urlCount≤2)`);
+    
+    // Determine level based on DATABASE frequency only
+    let level, reasoning;
+    if (score >= 85) {
+      level = 'highly-unique';
+      reasoning = `Exceptional food industry uniqueness! ${veryRareWords.length} ${veryRareWords.length === 1 ? 'word' : 'words'} rarely used by other food blogs.`;
+    } else if (score >= 70) {
+      level = 'unique';
+      reasoning = `Strong food industry uniqueness with ${veryRareWords.length + rareWords.length} rare/uncommon ${veryRareWords.length + rareWords.length === 1 ? 'word' : 'words'}.`;
+    } else if (score >= 55) {
+      level = 'moderately-unique';
+      reasoning = `Moderate uniqueness in food industry - mix of common and uncommon vocabulary.`;
+    } else if (score >= 40) {
+      level = 'somewhat-generic';
+      reasoning = `Fairly generic vocabulary in food industry - mostly common words.`;
+    } else {
+      level = 'generic';
+      reasoning = `Generic content using very common food industry vocabulary.`;
+    }
+    
+    // Get max urlCount as estimate of total blogs analyzed
+    const maxUrlCountDoc = await WordFrequency.findOne().sort({ urlCount: -1 }).select('urlCount');
+    const estimatedTotalBlogs = maxUrlCountDoc ? maxUrlCountDoc.urlCount : 0;
+    
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      level,
+      reasoning,
+      details: {
+        totalAnalyzed: validWords.length,
+        avgUrlCount: Math.round(avgUrlCount * 10) / 10,
+        veryRareCount: veryRareWords.length,
+        rareCount: rareWords.length,
+        uncommonCount: uncommonWords.length,
+        commonCount: commonWords.length,
+        veryRareWords: veryRareWords.slice(0, 5).map(w => w.word),
+        rareWords: rareWords.slice(0, 5).map(w => w.word),
+        totalBlogsInDatabase: estimatedTotalBlogs
+      }
+    };
+    
+  } catch (error) {
+    console.error('[Database Uniqueness Metric] Error:', error.message);
+    return {
+      score: 50,
+      level: 'unknown',
+      reasoning: 'Error calculating database uniqueness',
       details: {}
     };
   }
@@ -1907,30 +2030,14 @@ export const analyzeSite = async (req, res) => {
     else accuracyPoints = 0;
     
     // 3.3 Unique/Original Information Signals (0-12) - ENHANCED with keyword rarity analysis
-    // Extract top keywords from content
-    const topKeywords = extractTopKeywords(bodyText, 10);
+    // Extract top keywords from content - use 50 for proper analysis
+    const topKeywords = extractTopKeywords(bodyText, 50);
     
-    console.log(`[Content Analysis] Extracted ${topKeywords.length} keywords:`, topKeywords.slice(0, 5).map(k => k.word));
+    console.log(`[Content Analysis] Extracted ${topKeywords.length} keywords for analysis`);
     
-    // Store the 5 LEAST common words in database for cross-site comparison
-    if (topKeywords.length > 0) {
-      const sortedByLocalFreq = [...topKeywords].sort((a, b) => a.count - b.count);
-      const leastCommon5 = sortedByLocalFreq.slice(0, 5);
-      
-      console.log(`[Word Frequency] Storing 5 least common words:`, leastCommon5.map(w => w.word));
-      
-      // Store with Datamuse frequency for each word (async, don't block)
-      Promise.all(
-        leastCommon5.map(async ({ word, count }) => {
-          const datamuseFreq = await getWordFrequency(word);
-          return WordFrequency.incrementWord(word, count, datamuseFreq);
-        })
-      ).catch(err => console.error('[Word Frequency] Error storing words:', err.message));
-    }
-    
-    // Run keyword rarity and uniqueness metric in PARALLEL for faster performance
-    const [keywordRarityData, uniquenessMetric] = await Promise.all([
-      checkKeywordRarity(topKeywords)
+    // Run keyword rarity and BOTH uniqueness metrics in PARALLEL for faster performance
+    const [keywordRarityData, webUniquenessMetric, databaseUniquenessMetric] = await Promise.all([
+      checkKeywordRarity(topKeywords.slice(0, 10))  // Use top 10 for keyword rarity check
         .then(data => {
           console.log(`[Keyword Rarity] ✅ Analysis complete - Score: ${data.score}/10, Level: ${data.level}`);
           return data;
@@ -1939,16 +2046,41 @@ export const analyzeSite = async (req, res) => {
           console.error('[Keyword Rarity] ❌ Error:', error.message);
           return { score: 0, level: 'unknown', reasoning: 'No keywords extracted' };
         }),
-      calculateUniquenessMetric(bodyText)
+      calculateWebUniquenessMetric(bodyText)
         .then(data => {
-          console.log(`[Uniqueness Metric] ✅ Analysis complete - Score: ${data.score}/100, Level: ${data.level}`);
+          console.log(`[Web Uniqueness] ✅ Analysis complete - Score: ${data.score}/100, Level: ${data.level}`);
           return data;
         })
         .catch(error => {
-          console.error('[Uniqueness Metric] ❌ Error:', error.message);
+          console.error('[Web Uniqueness] ❌ Error:', error.message);
+          return { score: 50, level: 'unknown', reasoning: 'Analysis pending', details: {} };
+        }),
+      calculateDatabaseUniquenessMetric(bodyText)
+        .then(data => {
+          console.log(`[Database Uniqueness] ✅ Analysis complete - Score: ${data.score}/100, Level: ${data.level}`);
+          return data;
+        })
+        .catch(error => {
+          console.error('[Database Uniqueness] ❌ Error:', error.message);
           return { score: 50, level: 'unknown', reasoning: 'Analysis pending', details: {} };
         })
     ]);
+    
+    // Store the 5 LEAST common words in database for cross-site comparison (after analysis)
+    if (topKeywords.length > 0) {
+      const sortedByLocalFreq = [...topKeywords].sort((a, b) => a.count - b.count);
+      const leastCommon5 = sortedByLocalFreq.slice(0, 5);
+      
+      console.log(`[Word Frequency] Storing 5 least common words:`, leastCommon5.map(w => w.word));
+      
+      // Store with Datamuse frequency for each word (async, don't block response)
+      Promise.all(
+        leastCommon5.map(async ({ word, count }) => {
+          const datamuseFreq = await getWordFrequency(word);
+          return WordFrequency.incrementWord(word, count, datamuseFreq);
+        })
+      ).catch(err => console.error('[Word Frequency] Error storing words:', err.message));
+    }
     
     // Original keyword-based detection (existing)
     const originalityKeywords = /tested|tried|experiment|my experience|i found|i discovered|original recipe|exclusive|behind the scenes|tutorial|guide|hack|tip|secret|mistake|lesson learned/gi;
@@ -2442,11 +2574,17 @@ export const analyzeSite = async (req, res) => {
             reasoning: keywordRarityData.reasoning,
             top_keywords: topKeywords.slice(0, 5).map(k => k.word)
           },
-          uniqueness_metric: {
-            score: uniquenessMetric.score,
-            level: uniquenessMetric.level,
-            reasoning: uniquenessMetric.reasoning,
-            details: uniquenessMetric.details
+          web_uniqueness: {
+            score: webUniquenessMetric.score,
+            level: webUniquenessMetric.level,
+            reasoning: webUniquenessMetric.reasoning,
+            details: webUniquenessMetric.details
+          },
+          database_uniqueness: {
+            score: databaseUniquenessMetric.score,
+            level: databaseUniquenessMetric.level,
+            reasoning: databaseUniquenessMetric.reasoning,
+            details: databaseUniquenessMetric.details
           },
           originality_matches: originalityMatches,
           photo_originality_ratio: Math.round(photoOriginality * 100),
@@ -2508,7 +2646,8 @@ export const analyzeSite = async (req, res) => {
     // Generate EEAT-focused, blogger-friendly recommendations
 
     const recommendationMetrics = {
-      uniquenessMetric,
+      webUniquenessMetric,
+      databaseUniquenessMetric,
       duplicateRatio,
       photoOriginality,
       imagesCount,
