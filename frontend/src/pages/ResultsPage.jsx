@@ -720,38 +720,62 @@ const ResultsPage = () => {
                   {orderedEntries
                     .filter(([_, v]) => v !== null && v !== undefined)
                     .map(([mkey, mval], j) => {
-                      // Special rendering for uniqueness_metric
-                      if (mkey === 'uniqueness_metric' && typeof mval === 'object' && mval.score !== undefined) {
+                      // Special rendering for uniqueness metrics - side by side
+                      if (mkey === 'web_uniqueness' && typeof mval === 'object' && mval.score !== undefined) {
+                        // Find database_uniqueness from the same metrics object
+                        const dbUniqueness = metrics?.database_uniqueness;
+                        
                         return (
-                          <div key={j} className="border-t pt-3 mt-3">
-                            <div className="font-semibold text-slate-800 mb-2">🌟 Uniqueness Analysis</div>
-                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium text-slate-700">Uniqueness Score</span>
-                                <span className="text-lg font-bold text-purple-600">{mval.score}/100</span>
+                          <div key={j} className="border-t pt-3 mt-3 -mx-6 px-6">
+                            <div className="font-semibold text-slate-800 mb-3">✨ Uniqueness Analysis</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Web Uniqueness - Left Side */}
+                              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-100">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="font-semibold text-slate-800">Web Uniqueness</div>
+                                </div>
+                                <div className="text-xs text-slate-600 mb-3">Compared to general web (Datamuse API)</div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium text-slate-700">Score</span>
+                                  <span className="text-2xl font-bold text-blue-600">{mval.score}/100</span>
+                                </div>
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm text-slate-600">Level</span>
+                                  <span className="text-sm font-semibold text-slate-800 capitalize">{mval.level?.replace(/-/g, ' ')}</span>
+                                </div>
+                                {mval.reasoning && (
+                                  <p className="text-xs text-slate-600 italic mt-2 p-2 bg-white/50 rounded">{mval.reasoning}</p>
+                                )}
+                                {mval.details && mval.details.veryRareWords && mval.details.veryRareWords.length > 0 && (
+                                  <div className="mt-3 p-2 bg-white/60 rounded">
+                                    <span className="font-medium text-xs">Rare terms: </span>
+                                    <span className="text-blue-600 font-medium text-xs">{mval.details.veryRareWords.join(', ')}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-600">Level</span>
-                                <span className="text-sm font-semibold text-slate-800 capitalize">{mval.level?.replace(/-/g, ' ')}</span>
-                              </div>
-                              {mval.reasoning && (
-                                <p className="text-xs text-slate-600 italic mt-1">{mval.reasoning}</p>
-                              )}
-                              {mval.details && (
-                                <div className="text-xs text-slate-500 space-y-1 mt-2 pt-2 border-t border-slate-200">
-                                  {mval.details.totalAnalyzed && (
-                                    <div>Analyzed: {mval.details.totalAnalyzed} words</div>
+
+                              {/* Database Uniqueness - Right Side */}
+                              {dbUniqueness && typeof dbUniqueness === 'object' && dbUniqueness.score !== undefined && (
+                                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <div className="font-semibold text-slate-800">Industry Uniqueness</div>
+                                  </div>
+                                  <div className="text-xs text-slate-600 mb-3">Compared to food blogs (Database)</div>
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-slate-700">Score</span>
+                                    <span className="text-2xl font-bold text-purple-600">{dbUniqueness.score}/100</span>
+                                  </div>
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm text-slate-600">Level</span>
+                                    <span className="text-sm font-semibold text-slate-800 capitalize">{dbUniqueness.level?.replace(/-/g, ' ')}</span>
+                                  </div>
+                                  {dbUniqueness.reasoning && (
+                                    <p className="text-xs text-slate-600 italic mt-2 p-2 bg-white/50 rounded">{dbUniqueness.reasoning}</p>
                                   )}
-                                  {mval.details.veryRareCount !== undefined && (
-                                    <div>Very rare words: {mval.details.veryRareCount}</div>
-                                  )}
-                                  {mval.details.rareCount !== undefined && (
-                                    <div>Rare words: {mval.details.rareCount}</div>
-                                  )}
-                                  {mval.details.veryRareWords && mval.details.veryRareWords.length > 0 && (
-                                    <div className="mt-1">
-                                      <span className="font-medium">Rare terms: </span>
-                                      <span className="text-purple-600">{mval.details.veryRareWords.join(', ')}</span>
+                                  {dbUniqueness.details && dbUniqueness.details.veryRareWords && dbUniqueness.details.veryRareWords.length > 0 && (
+                                    <div className="mt-3 p-2 bg-white/60 rounded">
+                                      <span className="font-medium text-xs">Rare terms: </span>
+                                      <span className="text-purple-600 font-medium text-xs">{dbUniqueness.details.veryRareWords.join(', ')}</span>
                                     </div>
                                   )}
                                 </div>
@@ -759,6 +783,14 @@ const ResultsPage = () => {
                             </div>
                           </div>
                         );
+                      }
+                      // Skip database_uniqueness as it's already rendered with web_uniqueness
+                      if (mkey === 'database_uniqueness') {
+                        return null;
+                      }
+                      // Skip keyword_rarity_data object rendering
+                      if (mkey === 'keyword_rarity_data' && typeof mval === 'object') {
+                        return null;
                       }
                       // Default rendering for other metrics
                       return (
