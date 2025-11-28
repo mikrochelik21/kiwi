@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Search, Globe, Sparkles, Loader, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
@@ -9,6 +9,16 @@ const AnalyzePage = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [validUrl, setValidUrl] = useState(null);
   const navigate = useNavigate();
+
+  // Memoize kiwi positions so they don't change on re-render
+  const fallingKiwis = useMemo(() => {
+    return [...Array(12)].map((_, i) => ({
+      left: Math.random() * 100 + '%',
+      animationDelay: (Math.random() * 8 - 2) + 's',
+      animationDuration: (Math.random() * 4 + 6) + 's',
+      opacity: Math.random() * 0.4 + 0.3,
+    }));
+  }, []); // Empty dependency array means this only runs once
 
   const validateUrl = (input) => {
     try {
@@ -116,16 +126,16 @@ const AnalyzePage = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-r from-emerald-300/20 to-lime-300/20 rounded-full blur-3xl animate-pulse-slow" />
         
         {/* Falling kiwis instead of particles */}
-        {[...Array(12)].map((_, i) => (
+        {fallingKiwis.map((kiwi, i) => (
           <div
             key={i}
             className="absolute text-4xl animate-fall"
             style={{
-              left: Math.random() * 100 + '%',
+              left: kiwi.left,
               top: '-100px',
-              animationDelay: (Math.random() * 8 - 2) + 's',
-              animationDuration: (Math.random() * 4 + 6) + 's',
-              opacity: Math.random() * 0.4 + 0.3,
+              animationDelay: kiwi.animationDelay,
+              animationDuration: kiwi.animationDuration,
+              opacity: kiwi.opacity,
             }}
           >
             🥝
