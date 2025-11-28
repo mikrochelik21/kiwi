@@ -42,9 +42,9 @@ const CreatorLandingPage = () => {
   ];
 
   const stats = [
-    { value: "95%", label: "Accuracy Rate" },
+    { value: "90%", label: "Accuracy Rate" },
     { value: "1000+", label: "Sites Analyzed" },
-    { value: "<30s", label: "Analysis Time" },
+    { value: "<60s", label: "Analysis Time" },
     { value: "Free", label: "No Cost" }
   ];
 
@@ -141,8 +141,8 @@ const CreatorLandingPage = () => {
               {/* Quick stats with creative layout */}
               <div className="grid grid-cols-3 gap-4 pt-8">
                 {[
-                  { value: "95%", label: "Accuracy" },
-                  { value: "<30s", label: "Speed" },
+                  { value: "90%", label: "Accuracy" },
+                  { value: "<60s", label: "Speed" },
                   { value: "Free", label: "Always" }
                 ].map((stat, i) => (
                   <div key={i} className="text-center group hover:scale-110 transition-transform cursor-default">
