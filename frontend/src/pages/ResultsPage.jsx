@@ -1,6 +1,79 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useLocation, Link } from "react-router";
-import { ArrowLeft, Download, Share2, CheckCircle, AlertTriangle, TrendingUp, TrendingDown, Sparkles } from "lucide-react";
+import { ArrowLeft, Download, Share2, CheckCircle, AlertTriangle, TrendingUp, TrendingDown, Sparkles, Info } from "lucide-react";
+import ModuleDetails from "../components/ModuleDetails";
+
+// Metric definitions for tooltips
+const metricDefinitions = {
+  // Content metrics
+  'word_count': 'Total number of words in your content. More comprehensive content typically performs better.',
+  'flesch_score': 'Readability score (0-100). Higher means easier to read. Aim for 60+ for general audience.',
+  'avg_sentence_length': 'Average words per sentence. Shorter sentences (15-20 words) are easier to read.',
+  'depth_score': 'How comprehensive and detailed your content is.',
+  'readability_score': 'How easy your content is to understand for your target audience.',
+  'structure_score': 'Quality of headings, paragraphs, and content organization.',
+  'media_score': 'Effective use of images, videos, and visual elements.',
+  'engagement_score': 'Elements that keep readers interested and active.',
+  'originality_score': 'How unique and fresh your content is compared to others.',
+  'relevance_score': 'How well your content matches what readers are searching for.',
+  'duplicate_ratio': 'Percentage of content similar to other sources. Lower is better.',
+  'keyword_density': 'How often keywords appear. Natural density is 1-2%.',
+  'images_count': 'Total images in your content. Visual content improves engagement.',
+  'photo_originality_ratio': 'Percentage of original vs stock photos. Original is better.',
+  'has_original_photos': 'Whether you use your own photos (shows real experience).',
+  
+  // Performance metrics
+  'lcp_value': 'Largest Contentful Paint - how fast main content loads. Under 2.5s is good.',
+  'cls_value': 'Cumulative Layout Shift - visual stability. Lower is better (under 0.1).',
+  'fcp_value': 'First Contentful Paint - when first content appears. Under 1.8s is good.',
+  'tbt_value': 'Total Blocking Time - interactivity delay. Under 300ms is good.',
+  'ttfb_value': 'Time to First Byte - server response speed. Under 600ms is good.',
+  'html_size': 'Page size in bytes. Smaller pages load faster.',
+  'blocking_scripts': 'Number of scripts that slow down initial page load.',
+  'ad_scripts': 'Number of advertising scripts. Too many can slow your site.',
+  'overlays': 'Pop-ups and overlays. Too many frustrate visitors.',
+  'sticky_ads': 'Fixed ads that follow scrolling. Can be intrusive.',
+  
+  // SEO metrics
+  'meta_description': 'Preview text shown in search results. Should be 120-160 characters.',
+  'structured_data_present': 'Rich snippets code that helps search engines understand your content.',
+  'robots_indexable': 'Whether search engines are allowed to index your page.',
+  'open_graph_present': 'Social media preview tags for when content is shared.',
+  'images_missing_alt': 'Images without descriptions (hurts accessibility and SEO).',
+  'canonical_url': 'Preferred URL for this content (prevents duplicate content issues).',
+  
+  // Trust & Authority
+  'about_present': 'Whether you have an About page showing your expertise.',
+  'contact_present': 'Contact information availability (builds trust).',
+  'privacy_present': 'Privacy policy (required if you use ads or analytics).',
+  'broken_links_count': 'Number of links that don\'t work. Should be fixed.',
+  'broken_link_rate': 'Percentage of broken links. Lower is better.',
+  'total_references': 'External sources you cite (shows research and authority).',
+  'citation_matches': 'Proper citations to credible sources.',
+  'scholarly_links': 'Links to academic or authoritative sources.',
+  
+  // UX metrics
+  'viewport': 'Mobile-friendly responsive design setting.',
+  'lazy_fraction': 'Percentage of images using lazy loading (good for speed).',
+  'images_missing_dims': 'Images without size specified (causes layout shifts).',
+  'click_here_anchors': 'Generic "click here" links. Descriptive links are better.',
+  'internal_links_total': 'Links to your other content (helps readers explore more).',
+  
+  // Security
+  'https': 'Secure HTTPS connection (protects visitor data).',
+  'analytics_present': 'Whether you track visitor behavior.',
+  
+  // Headings
+  'headings': 'Structure of H1, H2, H3 headings in your content.',
+  'h1': 'Main title count. Should have exactly 1.',
+  'h2': 'Major section headings. Break up content into scannable chunks.',
+  'h3': 'Subsection headings for detailed organization.',
+  
+  // Scores
+  'final_score': 'Overall quality score combining all factors.',
+  'spam_points': 'Penalties for spammy elements. Lower is better.',
+  'fresh_content': 'Whether content appears recently updated.'
+};
 
 const resolveApiBase = () => {
   const envBase = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
@@ -492,7 +565,10 @@ const ResultsPage = () => {
             </div>
             
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
-              {(results?.modules ? Object.entries(results.modules).map(([key, {score}]) => ({name: key.charAt(0).toUpperCase() + key.slice(1), score})) : []).map((cat, i) => (
+              {(results?.modules ? Object.entries(results.modules).map(([key, {score}]) => ({
+                name: key === 'seo' ? 'SEO' : key === 'ux' ? 'User Experience' : key.charAt(0).toUpperCase() + key.slice(1), 
+                score
+              })) : []).map((cat, i) => (
                 <div key={i} className="group p-4 bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200/50 hover:border-green-300/50 hover:shadow-lg hover:shadow-green-100/50 transition-all duration-300 hover:scale-105 relative overflow-hidden print:bg-white print:shadow-none print:border-slate-300 print:scale-100">
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -553,6 +629,8 @@ const ResultsPage = () => {
                   .filter(([key, val]) => typeof val === 'number' && !key.includes('count') && !key.includes('total'))
                   .slice(0, 3);
                 
+                const displayName = moduleName === 'seo' ? 'SEO' : moduleName === 'ux' ? 'User Experience' : moduleName.charAt(0).toUpperCase() + moduleName.slice(1);
+                
                 return (
                   <div
                     key={i}
@@ -562,8 +640,8 @@ const ResultsPage = () => {
                     }}
                   >
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold text-slate-900 capitalize">
-                        {moduleName.replace(/_/g, ' ')}
+                      <h3 className="text-lg font-bold text-slate-900">
+                        {displayName}
                       </h3>
                       <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getScoreColor(moduleData.score)} flex items-center justify-center shadow-lg`}>
                         <span className="text-white font-bold text-lg">{moduleData.score}</span>
@@ -694,118 +772,9 @@ const ResultsPage = () => {
             })}
         </div>
 
-        {/* Detailed Metrics */}
-        <div className={`${activeTab === 'module-details' ? 'grid' : 'hidden'} print:grid md:grid-cols-2 gap-6`}>
-            {(results?.modules ? Object.entries(results.modules) : []).map(([key, {score, metrics}], i) => {
-              // For content module, promote core sub-scores first
-              const orderedEntries = (() => {
-                if (key === 'content' && metrics) {
-                  const priorityKeys = [
-                    'depth_score','readability_score','structure_score','media_score','engagement_score','originality_score','relevance_score'
-                  ];
-                  const primary = priorityKeys
-                    .filter(k => k in metrics)
-                    .map(k => [k, metrics[k]]);
-                  const rest = Object.entries(metrics)
-                    .filter(([k]) => !priorityKeys.includes(k));
-                  return [...primary, ...rest];
-                }
-                return Object.entries(metrics || {});
-              })();
-              return (
-              <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-200/50 p-6 print-section print:bg-white print:border-slate-300">
-                <h3 className="text-xl font-bold text-slate-900 mb-4">{key.charAt(0).toUpperCase() + key.slice(1)}</h3>
-                <div className="space-y-3">
-                  <div className="text-2xl font-bold text-blue-600">{score}/100</div>
-                  {orderedEntries
-                    .filter(([_, v]) => v !== null && v !== undefined)
-                    .map(([mkey, mval], j) => {
-                      // Special rendering for uniqueness metrics - side by side
-                      if (mkey === 'web_uniqueness' && typeof mval === 'object' && mval.score !== undefined) {
-                        // Find database_uniqueness from the same metrics object
-                        const dbUniqueness = metrics?.database_uniqueness;
-                        
-                        return (
-                          <div key={j} className="border-t pt-3 mt-3 -mx-6 px-6">
-                            <div className="font-semibold text-slate-800 mb-3">✨ Uniqueness Analysis</div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Web Uniqueness - Left Side */}
-                              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-100">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="font-semibold text-slate-800">Web Uniqueness</div>
-                                </div>
-                                <div className="text-xs text-slate-600 mb-3">Compared to general web (Datamuse API)</div>
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm font-medium text-slate-700">Score</span>
-                                  <span className="text-2xl font-bold text-blue-600">{mval.score}/100</span>
-                                </div>
-                                <div className="flex justify-between items-center mb-2">
-                                  <span className="text-sm text-slate-600">Level</span>
-                                  <span className="text-sm font-semibold text-slate-800 capitalize">{mval.level?.replace(/-/g, ' ')}</span>
-                                </div>
-                                {mval.reasoning && (
-                                  <p className="text-xs text-slate-600 italic mt-2 p-2 bg-white/50 rounded">{mval.reasoning}</p>
-                                )}
-                                {mval.details && mval.details.veryRareWords && mval.details.veryRareWords.length > 0 && (
-                                  <div className="mt-3 p-2 bg-white/60 rounded">
-                                    <span className="font-medium text-xs">Rare terms: </span>
-                                    <span className="text-blue-600 font-medium text-xs">{mval.details.veryRareWords.join(', ')}</span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Database Uniqueness - Right Side */}
-                              {dbUniqueness && typeof dbUniqueness === 'object' && dbUniqueness.score !== undefined && (
-                                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-100">
-                                  <div className="flex items-center gap-2 mb-3">
-                                    <div className="font-semibold text-slate-800">Industry Uniqueness</div>
-                                  </div>
-                                  <div className="text-xs text-slate-600 mb-3">Compared to food blogs (Database)</div>
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm font-medium text-slate-700">Score</span>
-                                    <span className="text-2xl font-bold text-purple-600">{dbUniqueness.score}/100</span>
-                                  </div>
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-600">Level</span>
-                                    <span className="text-sm font-semibold text-slate-800 capitalize">{dbUniqueness.level?.replace(/-/g, ' ')}</span>
-                                  </div>
-                                  {dbUniqueness.reasoning && (
-                                    <p className="text-xs text-slate-600 italic mt-2 p-2 bg-white/50 rounded">{dbUniqueness.reasoning}</p>
-                                  )}
-                                  {dbUniqueness.details && dbUniqueness.details.veryRareWords && dbUniqueness.details.veryRareWords.length > 0 && (
-                                    <div className="mt-3 p-2 bg-white/60 rounded">
-                                      <span className="font-medium text-xs">Rare terms: </span>
-                                      <span className="text-purple-600 font-medium text-xs">{dbUniqueness.details.veryRareWords.join(', ')}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }
-                      // Skip database_uniqueness as it's already rendered with web_uniqueness
-                      if (mkey === 'database_uniqueness') {
-                        return null;
-                      }
-                      // Skip keyword_rarity_data object rendering
-                      if (mkey === 'keyword_rarity_data' && typeof mval === 'object') {
-                        return null;
-                      }
-                      // Default rendering for other metrics
-                      return (
-                        <div key={j}>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-slate-700">{mkey.replace(/_/g, ' ')}</span>
-                            <span className="font-semibold text-slate-900">{typeof mval === 'boolean' ? (mval ? 'Yes' : 'No') : (typeof mval === 'number' && !Number.isInteger(mval) ? mval.toFixed(2) : String(mval))}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-              );
-            })}
+        {/* Detailed Metrics - New Interactive Component */}
+        <div className={`${activeTab === 'module-details' ? 'block' : 'hidden'} print:block`}>
+          <ModuleDetails results={results} />
         </div>
         </>
         )}
