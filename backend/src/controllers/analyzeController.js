@@ -6,7 +6,8 @@ import WordFrequency from "../models/WordFrequency.js";
 import puppeteer from "puppeteer";
 import logger from "../lib/logger.js";
 
-const GOOGLE_PAGESPEED_API_KEY = process.env.GOOGLE_PAGESPEED_API_KEY;
+// Don't read env var at module load time - read it when needed
+// const GOOGLE_PAGESPEED_API_KEY = process.env.GOOGLE_PAGESPEED_API_KEY;
 
 /**
  * Validates URL to prevent SSRF attacks
@@ -562,37 +563,47 @@ async function estimateSearchCount(keywords) {
  * @returns {Promise<Object>} - Real LCP, CLS, FCP, TBT metrics from Google
  */
 async function getPageSpeedMetrics(url, strategy = 'mobile') {
+  const GOOGLE_PAGESPEED_API_KEY = process.env.GOOGLE_PAGESPEED_API_KEY;
+  
   if (!GOOGLE_PAGESPEED_API_KEY) {
-    logger.log('[PageSpeed API] No API key configured, skipping...');
+    console.log('[PageSpeed API] ❌ No API key configured, skipping...');
     return null;
   }
+
+  console.log(`[PageSpeed API] ✅ API key found: ${GOOGLE_PAGESPEED_API_KEY.substring(0, 10)}...`);
 
   try {
     const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${GOOGLE_PAGESPEED_API_KEY}&strategy=${strategy}&category=performance`;
     
-    console.log(`[PageSpeed API] Analyzing ${url} (${strategy})...`);
+    console.log(`[PageSpeed API] 🚀 Calling API for ${url} (${strategy})...`);
+    console.log(`[PageSpeed API] 🔗 URL: ${apiUrl.substring(0, 150)}...`);
     
     // Use AbortController for robust timeout handling (Node fetch doesn't support timeout option)
     const controller = new AbortController();
-    const timeoutMs = Number(process.env.PAGESPEED_TIMEOUT_MS || 20000);
+    const timeoutMs = Number(process.env.PAGESPEED_TIMEOUT_MS || 45000); // Increased to 45 seconds
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    
+    console.log(`[PageSpeed API] ⏱️ Timeout set to ${timeoutMs / 1000} seconds`);
+    
     const response = await fetch(apiUrl, { signal: controller.signal });
     clearTimeout(timer);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[PageSpeed API] HTTP ${response.status}:`, errorText);
+      console.error(`[PageSpeed API] ❌ HTTP ${response.status}:`, errorText.substring(0, 200));
       return null;
     }
     
     const data = await response.json();
+    
+    console.log(`[PageSpeed API] ✅ Response received, parsing data...`);
     
     // Extract metrics from PageSpeed response
     const lighthouseResult = data.lighthouseResult;
     const audits = lighthouseResult?.audits;
     
     if (!audits) {
-      console.error('[PageSpeed API] No audit data in response');
+      console.error('[PageSpeed API] ❌ No audit data in response');
       return null;
     }
     
@@ -631,7 +642,11 @@ async function getPageSpeedMetrics(url, strategy = 'mobile') {
     
     return metrics;
   } catch (error) {
-    console.error('[PageSpeed API] Error:', error.message);
+    const timeoutMs = Number(process.env.PAGESPEED_TIMEOUT_MS || 45000);
+    console.error('[PageSpeed API] ❌ Error:', error.name, error.message);
+    if (error.name === 'AbortError') {
+      console.error(`[PageSpeed API] ⏱️ Request timed out after ${timeoutMs / 1000} seconds`);
+    }
     return null;
   }
 }
